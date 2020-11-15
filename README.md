@@ -283,7 +283,7 @@ func (cap *Capability) GetReadIDField(object interface{}) string
  * }
  *
  * Because the user should be able to read all of the posts from all of
- * the users have permission to read (themself plus their followees), the set
+ * the users they have permission to read (themself plus their followees), the set
  * of posts that the user can read is determined by the post's UserID field,
  * rather than the post's ID. Thus, when passed a post object, GetReadIDs should
  * return the set of **user** IDs that the capability allows the user to read.
