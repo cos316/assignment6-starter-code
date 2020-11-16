@@ -334,19 +334,22 @@ func (cm *CapabilityManager) AddReadCapability(cap *Capability, object interface
 
 /*
  * Given a capability and an object, cm.AddWriteapCability(cap, object) returns a new capability
- * that includes all capabilities of cap plus the ability to write object.
+ * that includes all capabilities of cap plus the ability to write object. Like mentioned above
+ * for `AddReadCapability()`, the original capability should not be modified.
  */
 func (cm *CapabilityManager) AddWriteCapability(cap *Capability, object interface{}) *Capability
 
 /*
  * Given a capability and an object, cm.RemoveReadCapability(cap, object) returns a new capability
- * that includes all capabilities of cap minus the ability to read object.
+ * that includes all capabilities of cap minus the ability to read object. Like mentioned above
+ * for `AddReadCapability()`, the original capability should not be modified.
  */
 func (cm *CapabilityManager) RemoveReadCapability(cap *Capability, object interface{}) *Capability
 
 /*
  * Given a capability and an object, cm.RemoveWriteCapability(cap, object) returns a new capability
- * that includes all capabilities of cap minus the ability to write object.
+ * that includes all capabilities of cap minus the ability to write object. Like mentioned above
+ * for `AddReadCapability()`, the original capability should not be modified.
  */
 func (cm *CapabilityManager) RemoveWriteCapability(cap *Capability, object interface{}) *Capability
 ```
@@ -516,8 +519,6 @@ for more detailed instructions.
 
 Recall Go uses the [testing package](https://golang.org/pkg/testing/) to create
 unit tests for Go packages.
-
-For this assignment, you are provided with dorm_test.go, which contains very basic unit tests. You are encouraged to extend this file to create your own unit tests.
 
 ## Submission & Grading
 

@@ -77,7 +77,7 @@ func (cap *Capability) GetReadIDField(object interface{}) string {
  * }
  *
  * Because the user should be able to read all of the posts from all of
- * the users have permission to read (themself plus their followees), the set
+ * the users they have permission to read (themself plus their followees), the set
  * of posts that the user can read is determined by the post's UserID field,
  * rather than the post's ID. Thus, when passed a post object, GetReadIDs should
  * return the set of **user** IDs that the capability allows the user to read.
@@ -149,7 +149,8 @@ func (cm *CapabilityManager) AddReadCapability(cap *Capability, object interface
 
 /*
  * Given a capability and an object, cm.AddWriteapCability(cap, object) returns a new capability
- * that includes all capabilities of cap plus the ability to write object.
+ * that includes all capabilities of cap plus the ability to write object. Like mentioned above
+ * for `AddReadCapability()`, the original capability should not be modified.
  */
 func (cm *CapabilityManager) AddWriteCapability(cap *Capability, object interface{}) *Capability {
 	return nil
@@ -157,7 +158,8 @@ func (cm *CapabilityManager) AddWriteCapability(cap *Capability, object interfac
 
 /*
  * Given a capability and an object, cm.RemoveReadCapability(cap, object) returns a new capability
- * that includes all capabilities of cap minus the ability to read object.
+ * that includes all capabilities of cap minus the ability to read object. Like mentioned above
+ * for `AddReadCapability()`, the original capability should not be modified.
  */
 func (cm *CapabilityManager) RemoveReadCapability(cap *Capability, object interface{}) *Capability {
 	return nil
@@ -165,7 +167,8 @@ func (cm *CapabilityManager) RemoveReadCapability(cap *Capability, object interf
 
 /*
  * Given a capability and an object, cm.RemoveWriteCapability(cap, object) returns a new capability
- * that includes all capabilities of cap minus the ability to write object.
+ * that includes all capabilities of cap minus the ability to write object. Like mentioned above
+ * for `AddReadCapability()`, the original capability should not be modified.
  */
 func (cm *CapabilityManager) RemoveWriteCapability(cap *Capability, object interface{}) *Capability {
 	return nil
