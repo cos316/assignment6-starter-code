@@ -171,7 +171,7 @@ user := &User{
     Username: "alevy",
 }
 
-post := &User{
+post := &Post{
     ID:       100,
     UserID:   1,
     Text:     "Hello world!",
@@ -328,28 +328,28 @@ func (cm *CapabilityManager) GetRootCapability(username string) *Capability
  * that includes all capabilities of cap plus the ability to read object. That is, if newCap is
  * the new capability, then calling newCap.CanRead(object) should return true. Note, however, that
  * the original capability should not be modified, so calling cap.CanRead(object) should still
- * return false.
+ * return false. Similarly, root capabilities should not change.
  */
 func (cm *CapabilityManager) AddReadCapability(cap *Capability, object interface{}) *Capability
 
 /*
  * Given a capability and an object, cm.AddWriteapCability(cap, object) returns a new capability
  * that includes all capabilities of cap plus the ability to write object. Like mentioned above
- * for `AddReadCapability()`, the original capability should not be modified.
+ * for `AddReadCapability()`, the original capability and all root capabilities should not be modified.
  */
 func (cm *CapabilityManager) AddWriteCapability(cap *Capability, object interface{}) *Capability
 
 /*
  * Given a capability and an object, cm.RemoveReadCapability(cap, object) returns a new capability
  * that includes all capabilities of cap minus the ability to read object. Like mentioned above
- * for `AddReadCapability()`, the original capability should not be modified.
+ * for `AddReadCapability()`, the original capability and all root capabilities should not be modified.
  */
 func (cm *CapabilityManager) RemoveReadCapability(cap *Capability, object interface{}) *Capability
 
 /*
  * Given a capability and an object, cm.RemoveWriteCapability(cap, object) returns a new capability
  * that includes all capabilities of cap minus the ability to write object. Like mentioned above
- * for `AddReadCapability()`, the original capability should not be modified.
+ * for `AddReadCapability()`, the original capability and all root capabilities should not be modified.
  */
 func (cm *CapabilityManager) RemoveWriteCapability(cap *Capability, object interface{}) *Capability
 ```
@@ -463,7 +463,9 @@ type DB interface {
 }
 ```
 
-Finally, to further remove some of the pains of using Go's `reflect`
+### Reflection Tips
+
+To further remove some of the pains of using Go's `reflect`
 package, we have provided you with two utility functions, which
 can be found in `utils.go`. You are not required to use either of
 these functions but may find them useful when implementing `SecureDB`.
@@ -481,6 +483,20 @@ func NewSliceFromSlice(result interface{}) interface{}
  * structs of the same type.
  */
 func NewSliceFromStruct(result interface{}) interface{}
+```
+
+Separately, when interacting with struct tags through the reflection API,
+we recommend that you carefully read about the different between
+`StructTag.Get()` and `StructTag.Lookup()`.
+
+Finally, to simplify the presentation of some of the code examples above,
+we used the syntax `[]interface{object}`. Unforunately, this is not actually
+valid Go code and thus will not compile. The reason why is unimportant,
+but you can achieve the desired result using two lines of code. For instance,
+
+```go
+var list []interface{}
+list = append(list, object)
 ```
 
 ### Restrictions on Structs

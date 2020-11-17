@@ -141,7 +141,7 @@ func (cm *CapabilityManager) SetRootCapability(username string,
  * that includes all capabilities of cap plus the ability to read object. That is, if newCap is
  * the new capability, then calling newCap.CanRead(object) should return true. Note, however, that
  * the original capability should not be modified, so calling cap.CanRead(object) should still
- * return false.
+ * return false. Similarly, root capabilities should not change.
  */
 func (cm *CapabilityManager) AddReadCapability(cap *Capability, object interface{}) *Capability {
 	return nil
@@ -150,7 +150,7 @@ func (cm *CapabilityManager) AddReadCapability(cap *Capability, object interface
 /*
  * Given a capability and an object, cm.AddWriteapCability(cap, object) returns a new capability
  * that includes all capabilities of cap plus the ability to write object. Like mentioned above
- * for `AddReadCapability()`, the original capability should not be modified.
+ * for `AddReadCapability()`, the original capability and all root capabilities should not be modified.
  */
 func (cm *CapabilityManager) AddWriteCapability(cap *Capability, object interface{}) *Capability {
 	return nil
@@ -159,7 +159,7 @@ func (cm *CapabilityManager) AddWriteCapability(cap *Capability, object interfac
 /*
  * Given a capability and an object, cm.RemoveReadCapability(cap, object) returns a new capability
  * that includes all capabilities of cap minus the ability to read object. Like mentioned above
- * for `AddReadCapability()`, the original capability should not be modified.
+ * for `AddReadCapability()`, the original capability and all root capabilities should not be modified.
  */
 func (cm *CapabilityManager) RemoveReadCapability(cap *Capability, object interface{}) *Capability {
 	return nil
@@ -168,7 +168,7 @@ func (cm *CapabilityManager) RemoveReadCapability(cap *Capability, object interf
 /*
  * Given a capability and an object, cm.RemoveWriteCapability(cap, object) returns a new capability
  * that includes all capabilities of cap minus the ability to write object. Like mentioned above
- * for `AddReadCapability()`, the original capability should not be modified.
+ * for `AddReadCapability()`, the original capability and all root capabilities should not be modified.
  */
 func (cm *CapabilityManager) RemoveWriteCapability(cap *Capability, object interface{}) *Capability {
 	return nil
