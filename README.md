@@ -250,7 +250,7 @@ func NewCapabilityManager() *CapabilityManager
 
 /*
  * A root capability bootstraps a user's permissions. Given a unique username and
- * two slices of objects, cm.SetRootCapability(username, readSet, writeSet)
+ * two slices of pointers to objects, cm.SetRootCapability(username, readSet, writeSet)
  * associates a root capability with the username. The root capability is expected to allow
  * reading and writing all objects in readSet and writeSet, respectively. For instance,
  * a newly created user's root capability might just include the ability to read and write
