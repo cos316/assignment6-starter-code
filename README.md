@@ -161,9 +161,8 @@ type Post struct {
 Here, the `cap` tag has an associated value `read=User.ID`. Combined with the
 fact that the `cap` tag is on the `UserID` field, this tag expresses that
 a post should be readable if the capability permits the caller to read the
-user ID that is stored in the post's `UserID` field. (More generally, the tag
-value can be of the form `read=<struct name>.<field name>`.) Again, to make
-this more concrete, consider the following example code:
+user ID that is stored in the post's `UserID` field. Again, to make this
+concrete, consider the following example code:
 
 ```go
 user := &User{
@@ -188,9 +187,13 @@ cap.CanRead(post) // Should return false
 
 Note that the first call to `CanRead()` returns true even though user `alevy`'s
 root capability (more info on root capabilities below), only included permissions
-to read and write `alevy`'s user object. In this way, the application allows that
+to read and write `alevy`'s **user** struct. In this way, the application allows that
 once we have the capability to read a user's struct, we can also read all of their
 posts.
+
+More generally, the tag value can include one or both of `read=<struct name>.<field name>`
+and `write=<struct name>.<field name>`. If it includes both, then the two will be separated
+by a semicolon, for example, `cap:"read=User.ID;write=User.ID"`.
 
 ## Capabilities API
 
@@ -233,65 +236,6 @@ func (cap *Capability) CanRead(object interface{}) bool
  * will be a pointer to a model.
  */
 func (cap *Capability) CanWrite(object interface{}) bool
-
-/*
- * Given a capability and an object, calling cap.GetReadIDField(object)
- * returns the name of the field used to determine the read permissions
- * for the object type. For instance, given the following two structs:
- *
- * type User struct {
- * 	ID        int64 `cap:""`
- * 	Username  string
- * }
- *
- * type Post struct {
- * 	ID     int64
- * 	UserID int64 `cap:"read=User.ID"`
- * 	Text   string
- * }
- *
- * GetReadIDField should return "ID" when passed a user object and should
- * return "UserID" when passed a post object.
- *
- * As mentioned in the description of CanRead, the argument `object`
- * will be a pointer to a model.
- */
-func (cap *Capability) GetReadIDField(object interface{}) string
-
-/*
- * Given a capability and an object, calling cap.GetReadIDs(object)
- * returns a slice containing the set of field values that identify the
- * set of objects the caller has permission to read. For instance,
- * in the simplest case, consider the following user struct:
- *
- * type User struct {
- * 	ID        int64 `cap:""`
- * 	Username  string
- * }
- *
- * When passed a user object, GetReadIDs should return the list of user IDs
- * that the capability allows the user to read (e.g., the user themselves
- * and the users they follow).
- *
- * As described above, to allow for flexible security policies, consider
- * the following post struct:
- *
- * type Post struct {
- * 	ID     int64
- * 	UserID int64 `cap:"read=User.ID"`
- * 	Text   string
- * }
- *
- * Because the user should be able to read all of the posts from all of
- * the users they have permission to read (themself plus their followees), the set
- * of posts that the user can read is determined by the post's UserID field,
- * rather than the post's ID. Thus, when passed a post object, GetReadIDs should
- * return the set of **user** IDs that the capability allows the user to read.
- *
- * As mentioned in the description of CanRead, the argument `object`
- * will be a pointer to a model.
- */
-func (cap *Capability) GetReadIDs(object interface{}) []interface{}
 
 /*
  * The capability manager allows users to create and modify capabilities.
@@ -355,7 +299,7 @@ func (cm *CapabilityManager) RemoveWriteCapability(cap *Capability, object inter
 ```
 
 For the `Capability`, you will be required to implement the following functions:
-`CanRead()`, `CanWrite()`, `GetReadIDField()`, and `GetReadIDs()`.
+`CanRead()` and `CanWrite()`.
 
 For the `CapabiltyManager`, you will be required to implement the following functions:
 `NewCapabilityManager()`, `GetRootCapability()`, `SetRootCapability()`, `AddReadCapability()`,
