@@ -1,11 +1,22 @@
-# COS316, Assignment 6: Secure Object Relational Mapper (Secure DORM)
+# COS316, Assignment 6/Final Project: Secure Object Relational Mapper (Secure DORM)
 
-## Due: 11/25 at 23:00 Princeton Time
+# Extensions for Final Project
+
+For the final project, we remove a few of the original expectations from Assignment 6.
+Please select some portion of the project to deviate from. For example, instead of creating
+capabilities, explore using join tables for permissions, or examine whether it's possible to
+create more fine-grained capabilities, such as update/create/delete permissions.
+You are free to deviate from the original specification however you would like and we expect
+some modification to the original design, as well as a clear explanation of why you modified the design.
+
+Since the design may deviate from the original, the graderbot tests will not work, so its
+expected that you create your own tests and demonstrate that your implementation is correct.
+The existing tests can be used as a starting point for your own tests.
 
 # Secure Dopey Object Relational Mapper (Secure DORM)
 
-This assignment asks you to extend the Dopey Object Relational Mapper (DORM) that
-you built in assignment 4. As a reminder, the ORM you built translates language-level
+This project asks you to extend the Dopey Object Relational Mapper (DORM) that
+you built in assignment 4, with a focus on security. As a reminder, the ORM you built translates language-level
 objects---Go structs---to and from a "relational mapping"---a SQLite database. In this
 assignment you will use capabilities to allow applications to enforce a security policy
 about who can read and write objects in the database.
@@ -15,7 +26,7 @@ In the application code, we would have a Go struct modeling each user:
 
 ```go
 type User struct {
-    ID       int64 `dorm:"primary_key" cap:""`
+    ID       int64 `dorm:"primary_key"`
     Username string
 }
 ```
@@ -61,19 +72,16 @@ The problem is that by using the DORM interface, code executing on behalf of any
 have access to all of the user data in the user table when calling `Find()`. For example,
 if code executing in a web server in response to a request by user `alevy` calls `Find()`,
 it will return user structs for `alevy` and `wlloyd`. This creates creates a potential
-vulnerabilty (either by a malicious actor or simply by programmer error) where user `alevy`
-may be able to extract `wlloyd`'s sensitive information (e.g., encrypted password) from the
-application. In this assignment you'll use capabilities to ensure that only the data that a
-user has permissions to access is returned by your new secure DORM interface.
+vulnerabilty where user `alevy` may be able to extract `wlloyd`'s sensitive information
+(e.g., encrypted password) from the application. In this assignment, you'll use capabilities to
+design a set of policies that protect against this, by specifying what actions a user can
+perform.
 
 For example, assuming the `wlloyd` user is already created in the database, we can modify the
 code above to use capabilities to enforce this security policy as follows:
 
 ```go
-// Create new capability manager
 dorm := NewSecureDB(...)
-cm := NewCapabilityManager(...)
-
 ...
 
 // Create user and set root capability
@@ -83,20 +91,18 @@ user := &User{
     Username: "alevy",
 }
 dorm.Create(user)
-cm.SetRootCapability("alevy", []interface{user}, []interface{user})
+...
+
+// Get user's capability by username
+cap := dorm.GetCapability("alevy")
 
 ...
 
-// Get user's root capability by username
-cap := cm.GetRootCapability("alevy")
+// Get users from's Alevy's capability
+users := []User{}
+dorm.Find(cap, &users)
 
-...
-
-// Get all users
-allUsers := []User{}
-dorm.Find(cap, &allUsers)
-
-for _, user := range allUsers {
+for _, user := range users {
     fmt.Printf("Found user %s\n", user.Username)
 }
 ```
@@ -106,8 +112,9 @@ even though both `alevy` and `wlloyd` exist the database.
 
 ## Expressing Security Policies
 
-Your capability-based security policies will be expressed using Go's struct tags.
-For example, consider the following user struct, which is the same as the one above:
+How you choose to represent security policies is up to you.
+As an example, you can extend Go's struct tags:
+consider the following user struct, which is the same as the one above:
 
 ```go
 type User struct {
@@ -118,9 +125,9 @@ type User struct {
 
 The `cap` tag will be used by your capabilities (more details on them below) to
 control how read and write permissions are evaluated for each object type. Here,
-the empty value (as denoted by the `""`) indicates that a user object's ID field
-will be used to determine whether a capability allows the caller to read or
-write the object. To make things concrete, consider the following example:
+the empty value (as denoted by the `""`) indicates that a user's ID field
+is used to determine whether a capability allows the caller to read or
+write the object. Consider the following example:
 
 ```go
 user := &User{
@@ -128,8 +135,7 @@ user := &User{
     Username: "alevy",
 }
 
-cm.SetRootCapability("alevy", []interface{user}, []interface{user})
-cap := cm.GetRootCapability("alevy")
+cap := dorm.GetCapability(user)
 
 cap.CanRead(user) // Should return true
 
@@ -137,8 +143,7 @@ user.ID = 7
 cap.CanRead(user) // Should return false
 ```
 
-Because the user object's ID field changed before the second call to `CanRead()`,
-`CanRead()` no longer returns true.
+Because the user object's ID field no longer matches `alevy`'s, it returns false.
 
 Unfortunately, this simple case does not map well to all security policies that
 an application may want to express. For instance, consider a user's posts. A
@@ -158,8 +163,8 @@ type Post struct {
 }
 ```
 
-Here, the `cap` tag has an associated value `read=User.ID`. Combined with the
-fact that the `cap` tag is on the `UserID` field, this tag expresses that
+Here, the `cap` tag has an associated value `read=User.ID`. Since
+the `cap` tag is on the `UserID` field, this tag indicates that
 a post should be readable if the capability permits the caller to read the
 user ID that is stored in the post's `UserID` field. Again, to make this
 concrete, consider the following example code:
@@ -176,8 +181,7 @@ post := &Post{
     Text:     "Hello world!",
 }
 
-cm.SetRootCapability("alevy", []interface{user}, []interface{user})
-cap := cm.GetRootCapability("alevy")
+cap := dorm.GetCapability("alevy")
 
 cap.CanRead(post) // Should return true
 
@@ -185,7 +189,7 @@ post.UserID = 7
 cap.CanRead(post) // Should return false
 ```
 
-Note that the first call to `CanRead()` returns true even though user `alevy`'s
+Note that the first call to `CanRead()` is true even though user `alevy`'s
 root capability (more info on root capabilities below), only included permissions
 to read and write `alevy`'s **user** struct. In this way, the application allows that
 once we have the capability to read a user's struct, we can also read all of their
@@ -197,8 +201,8 @@ by a semicolon, for example, `cap:"read=User.ID;write=User.ID"`.
 
 ## Capabilities API
 
-To implement the secure DORM interface, you will first need to implement the interfaces
-for creating and manipulating capabilities.
+As an example of a possible implementable API,
+we provide a set of template interfaces for creating and manipulating capabilities.
 
 The `secure_dorm` package (in `cap_manager.go`) includes two interfaces,
 `Capability` and `CapabilityManager`, which are defined as follows:
@@ -249,7 +253,7 @@ type CapabilityManager struct {
 func NewCapabilityManager() *CapabilityManager
 
 /*
- * A root capability bootstraps a user's permissions. Given a unique username and
+ * A root capability sets up a user's initial permissions. Given a unique username and
  * two slices of pointers to objects, cm.SetRootCapability(username, readSet, writeSet)
  * associates a root capability with the username. The root capability is expected to allow
  * reading and writing all objects in readSet and writeSet, respectively. For instance,
@@ -261,8 +265,8 @@ func (cm *CapabilityManager) SetRootCapability(username string, readSet []interf
 
 /*
  * Given a unique username, cm.GetRootCapability(username) returns the user's
- * root capability (or nil if one has not yet been set). A root capability bootstraps
- * the user's permissions. For instance, a newly created user's root capability might
+ * root capability (or nil if one has not yet been set). A root capability is the user's initial
+ * set of permissions. For instance, a newly created user's root capability might
  * just include the ability to read and write their own user object.
  */
 func (cm *CapabilityManager) GetRootCapability(username string) *Capability
@@ -467,28 +471,3 @@ In particular:
 * You can assume that only one field of any model argument will have a
   `cap` tag.
 
-## Getting started
-
-As in previous assignments, you will need to clone your GitHub classroom
-repository, and add the downloaded repo as a synced folder in your Vagrant VM
-before you start programming.
-Refer to the [GitHub classroom README](https://github.com/cos316/COS316-Public/blob/master/assignments/GITHUB.md)
-for more detailed instructions.
-
-## Unit testing
-
-Recall Go uses the [testing package](https://golang.org/pkg/testing/) to create
-unit tests for Go packages.
-
-## Submission & Grading
-
-Your assignment will be automatically submitted every time you push your changes
-to your GitHub Classroom repo. Within a couple minutes of your submission, the
-autograder will make a comment on your commit listing the output of our testing
-suite when run against your code. **Note that you will be graded only on your
-changes to the `secure_dorm` package**, and not on your changes to any other files,
-though you may modify any files you wish.
-
-You may submit and receive feedback in this way as many times as you like,
-whenever you like, but a substantial lateness penalty will be applied to
-submissions past the deadline.
